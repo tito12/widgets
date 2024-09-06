@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Test</title>
+    <style>
+        #root div { border: 1px solid #000; padding: 10px; margin: 5px; cursor: pointer; background-color: white; }
+        #root div.initialized { background-color: #e0ffe0; }
+        #root div.selected { outline: 2px solid blue; }
+        #root div:hover { background-color: #d4d4d4; }
+        #root div:before { content: attr(widget); }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div widget="widgets/a">
+            <div widget="widgets/b"></div>
+        </div>
+        <div></div>
+        <div widget="widgets/c"></div>
+    </div>
+    <button id="init">Init</button>
+    <button id="destroy">Destroy</button>
+
+    <pre id="info"></pre>
+
+    <script type="module">
+        import { WidgetsPortal } from './core/index.js';
+         
+        const widgetsPortal = new WidgetsPortal();
+        let selectedNode = null;
+
+        document.getElementById('root').addEventListener('click', (event) => {
+            if (selectedNode) {
+                selectedNode.classList.remove('selected');
+            }
+            selectedNode = event.target.closest('div');
+            if (selectedNode) {
+                selectedNode.classList.add('selected');
+                document.getElementById('info').textContent = `Selected: ${selectedNode.outerHTML}`;
+            }
+        });
+
+        document.getElementById('init').addEventListener('click', () => {
+            if (selectedNode) {
+                widgetsPortal.init(selectedNode, (error) => {
+                    const log = document.getElementById('info');
+                    if (error) {
+                        log.textContent += '\nError: ' + error.message;
+                    } else {
+                        const elements = [
+                            selectedNode,
+                            ...selectedNode.querySelectorAll("[widget]"),
+                        ];
+                        for (const element of elements) {
+                            element.classList.add('initialized');
+                        }
+                        log.textContent += '\nInitialization successful';
+                    }
+                });
+            }
+        });
+
+        document.getElementById('destroy').addEventListener('click', () => {
+            if (selectedNode) {
+                widgetsPortal.destroy(selectedNode);
+                const elements = [
+                    selectedNode,
+                    ...selectedNode.querySelectorAll("[widget]"),
+                ];
+                for (const element of elements) {
+                    element.classList.remove('initialized');
+                }
+                document.getElementById('info').textContent += '\nDestroyed';
+            }
+        });
+    </script>
+</body>
+</html>
